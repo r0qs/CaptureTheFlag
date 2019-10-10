@@ -52,13 +52,13 @@ contract Ownable {
 }
 
 contract CaptureTheFlag is Ownable {
-  address owner; // BUG: hide the owner variable from the base class
+  address owner; // It's a trap! It hides the owner variable from the base class
   event WhereAmI(address, string);
   Log TransferLog;
   uint256 public jackpot = 0;
   uint256 MinDeposit = 1 ether;
   uint256 minInvestment = 1 ether;
-  uint public sumInvested; // posible underflow? not important
+  uint public sumInvested; // posible underflow? but...not important...
   uint public sumDividend; // not used
   bool inProgress = false;
 
@@ -85,13 +85,13 @@ contract CaptureTheFlag is Ownable {
   }
 
   function getOwner() public returns (address) {
-    return owner;
+    return owner; // this owner is different from the real owner, isn't the one used in the modifiers.
   }
 
   // Payday!!
   function() public payable { // Steal your money
     if( msg.value >= jackpot ){
-      owner = msg.sender; // don't change the real owner inherit from Ownable contract.
+      owner = msg.sender; // It doesn't change the real owner inherited from Ownable contract.
     }
     jackpot += msg.value; // gimme money !!
   }
@@ -148,7 +148,7 @@ contract CaptureTheFlag is Ownable {
       revert();
     }
     // no need to test, this will throw if amount > investment
-    investors[msg.sender].investment -= amount; //if invest is possible to underflow, but for what? there is no sufficient balance anyway....
+    investors[msg.sender].investment -= amount; //if some investment is done, then is possible to underflow, but for what? there is no sufficient balance anyway, and the transfer will revert....
     sumInvested -= amount;
     this.loggedTransfer(amount, "", msg.sender, owner);
   }
