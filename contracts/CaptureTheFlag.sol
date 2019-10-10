@@ -52,21 +52,21 @@ contract Ownable {
 }
 
 contract CaptureTheFlag is Ownable {
-  address owner;
+  address owner; // BUG: hide the owner variable from the base class
   event WhereAmI(address, string);
   Log TransferLog;
   uint256 public jackpot = 0;
   uint256 MinDeposit = 1 ether;
   uint256 minInvestment = 1 ether;
-  uint public sumInvested;
-  uint public sumDividend;
+  uint public sumInvested; // posible underflow? not important
+  uint public sumDividend; // not used
   bool inProgress = false;
 
   mapping(address => uint256) public balances;
-  struct Osakako {
+  struct Osakako { // hum....
     address me;
   }
-  struct investor {
+  struct investor { //blabla
     uint256 investment;
     string username;
   }
@@ -84,12 +84,16 @@ contract CaptureTheFlag is Ownable {
     owner = msg.sender;
   }
 
+  function getOwner() public returns (address) {
+    return owner;
+  }
+
   // Payday!!
-  function() public payable {
+  function() public payable { // Steal your money
     if( msg.value >= jackpot ){
-      owner = msg.sender;
+      owner = msg.sender; // don't change the real owner inherit from Ownable contract.
     }
-    jackpot += msg.value; // add to our jackpot
+    jackpot += msg.value; // gimme money !!
   }
 
   modifier onlyUsers() {
@@ -124,7 +128,7 @@ contract CaptureTheFlag is Ownable {
 
   function CashOut(uint amount) public onlyUsers {
     if( amount <= balances[msg.sender] ){
-      if(msg.sender.call.value(amount)()){
+      if(msg.sender.call.value(amount)()){ // maybe...but..
         balances[msg.sender] -= amount;
         TransferLog.addMessage(" CashOut ");
       }
@@ -144,7 +148,7 @@ contract CaptureTheFlag is Ownable {
       revert();
     }
     // no need to test, this will throw if amount > investment
-    investors[msg.sender].investment -= amount;
+    investors[msg.sender].investment -= amount; //if invest is possible to underflow, but for what? there is no sufficient balance anyway....
     sumInvested -= amount;
     this.loggedTransfer(amount, "", msg.sender, owner);
   }
@@ -158,13 +162,17 @@ contract CaptureTheFlag is Ownable {
   }
   //--- Empty String Literal
 
+  // Solution2) Osakako osa;
   function osaka(string message) public onlyUsers {
-    Osakako osakako;
-    osakako.me = msg.sender;
+    // Solution1) Osakako memory osakako;
+    // Solution2) Osakako osakako =  osa;
+    Osakako osakako; // pointer to storage location at Ownable (owner) 
+    // https://github.com/ethereum/solidity/pull/4415/files#diff-48ec411cc833113f92ef1dc16d32d777L327
+    osakako.me = msg.sender; // pwned
     WhereAmI(osakako.me, message);
   }
 
-  function tryMeLast() public payable onlyUsers {
+  function tryMeLast() public payable onlyUsers { //blabla
     if ( msg.value >= 0.1 ether ) {
       uint256 multi = 0;
       uint256 amountToTransfer = 0;

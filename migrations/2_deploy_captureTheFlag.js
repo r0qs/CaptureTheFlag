@@ -1,11 +1,13 @@
 const CTF = artifacts.require("CaptureTheFlag");
 const Log = artifacts.require("Log");
 
-module.exports = async function(deployer) {
+module.exports = async function (deployer, network, accounts) {
   return deployer.then(async () => {
-    await deployer.deploy(Log);
-    const logContract = await Log.deployed();
+    if (/(local)/.test(deployer.network)) {
+      await deployer.deploy(Log);
+      const logContract = await Log.deployed();
 
-    await deployer.deploy(CTF, logContract.address)
+      await deployer.deploy(CTF, logContract.address, { from: accounts[0] })
+    }
   })
 }
